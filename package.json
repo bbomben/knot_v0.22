@@ -1,14 +1,14 @@
 {
-  "name": "knot-2.0",
+  "name": "knot_v0.22",
   "version": "1.0.0",
-  "homepage": "https://bbomben.github.io/Knot_v0.21",
+  "homepage": "https://bbomben.github.io/knot_v0.22",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist -r https://github.com/bbomben/Knot_v0.21.git"
+    "deploy": "main -d dist -r https://github.com/bbomben/knot_v0.22.git"
   },
   "dependencies": {
     "gh-pages": "^6.3.0",
