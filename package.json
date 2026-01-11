@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "main -d dist -r https://github.com/bbomben/knot_v0.22.git"
+    "deploy": "gh-pages -d dist -r https://github.com/bbomben/knot_v0.22.git"
   },
   "dependencies": {
     "gh-pages": "^6.3.0",
