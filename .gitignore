@@ -1,3 +1,5 @@
 node_modules/
 three.js-master/
 Archive/   
+dist/
+.DS_Store
