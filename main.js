@@ -20,6 +20,34 @@ document.body.appendChild(renderer.domElement);
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
 camera.position.set(700, 700, 700);
 
+// ---------- Axis helper overlay (Rhino-style) ----------
+const axisScene = new THREE.Scene();
+
+const axisCamera = new THREE.OrthographicCamera(-3, 3, 3, -3, 0, 10);
+axisCamera.position.set(0, 0, 5);
+axisCamera.lookAt(0, 0, 0);
+
+const axisHelper = new THREE.AxesHelper(2);
+const AXIS_LENGTH = 2;
+axisScene.add(axisHelper);
+// Axis labels
+const xLabel = createAxisLabel('X', '#ff0000');
+const yLabel = createAxisLabel('Y', '#00aa00');
+const zLabel = createAxisLabel('Z', '#0000ff');
+
+// Position labels at axis tips
+xLabel.position.set(AXIS_LENGTH + 0.3, 0, 0);
+yLabel.position.set(0, AXIS_LENGTH + 0.3, 0);
+zLabel.position.set(0, 0, AXIS_LENGTH + 0.3);
+
+// Attach labels to axis helper so they rotate together
+axisHelper.add(xLabel);
+axisHelper.add(yLabel);
+axisHelper.add(zLabel);
+
+
+
+
 renderer.setClearColor(0xFFFFFF);
 
 // Get actual canvas dimensions after DOM insertion and CSS media queries are applied
@@ -87,6 +115,8 @@ dirLight.position.set(3, 0.9, 4);
 scene.add(dirLight);
 
 scene.add(new THREE.HemisphereLight(0xB1E1FF, 0xB97A20, 2));
+
+
 
 const loader = new GLTFLoader();
 
@@ -204,11 +234,97 @@ function createArray() {
   }
 }
 
+function renderAxisHelper() {
+  // Default size and margin
+  let axisSize = 120; // default overlay size in pixels
+  let margin = 5;    // default distance from bottom-left
+
+  // Make it tighter and smaller for mobile
+  if (window.innerWidth <= 480) {       // small phones
+    axisSize = 100;
+    margin = 0;
+  } else if (window.innerWidth <= 768) { // tablets / medium
+    axisSize = 150;
+    margin = 0;
+  }
+
+  renderer.autoClear = false;
+  renderer.clearDepth();
+  renderer.setScissorTest(true);
+
+  renderer.setViewport(
+    margin,
+    margin,
+    axisSize,
+    axisSize
+  );
+
+  renderer.setScissor(
+    margin,
+    margin,
+    axisSize,
+    axisSize
+  );
+
+  renderer.render(axisScene, axisCamera);
+
+  renderer.setScissorTest(false);
+  renderer.autoClear = true;
+}
+
+
+// Create and add axis labels
+function createAxisLabel(text, color) {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext('2d');
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.font = 'bold 64px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  ctx.fillText(text, size / 2, size / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false // always visible
+  });
+
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(1.2, 1.2, 1.2); // label size in axis scene units
+
+  return sprite;
+}
+
+
 function animate() {
   requestAnimationFrame(animate);
+
   controls.update();
+
+  const size = renderer.getSize(new THREE.Vector2());
+
+  // Main scene
+  renderer.setViewport(0, 0, size.x, size.y);
+  renderer.setScissorTest(false);
+  renderer.clear();
   renderer.render(scene, camera);
+
+  // Axis overlay (screen-space)
+  axisHelper.quaternion.copy(camera.quaternion);
+  axisCamera.updateProjectionMatrix();
+
+  renderAxisHelper();
 }
 
 animate();
+
 
