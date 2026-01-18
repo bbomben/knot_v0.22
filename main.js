@@ -1,7 +1,7 @@
-import * as THREE from './three/build/three.module.js';
-import { GLTFLoader } from './three/examples/jsm/loaders/GLTFLoader.js';
-import { OrbitControls } from './three/examples/jsm/controls/OrbitControls.js';
-import { GUI } from './three/examples/jsm/libs/lil-gui.module.min.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 /* ================= Scene & Renderer ================= */
 
@@ -25,9 +25,10 @@ renderer.setClearColor(0xffffff);
 const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
 camera.position.set(700, 700, 700);
 
-/* ================= Axis Helper ================= */
+/* ================= Axis Helper (SAFE) ================= */
 
 const axisScene = new THREE.Scene();
+
 const axisCamera = new THREE.OrthographicCamera(-3, 3, 3, -3, 0, 10);
 axisCamera.position.set(0, 0, 5);
 axisCamera.lookAt(0, 0, 0);
@@ -36,15 +37,16 @@ const axisHelper = new THREE.AxesHelper(2);
 axisScene.add(axisHelper);
 
 const AXIS_LENGTH = 2;
+
 const xLabel = createAxisLabel('X', '#ff0000');
 const yLabel = createAxisLabel('Y', '#00aa00');
 const zLabel = createAxisLabel('Z', '#0000ff');
+
 xLabel.position.set(AXIS_LENGTH + 0.3, 0, 0);
 yLabel.position.set(0, AXIS_LENGTH + 0.3, 0);
 zLabel.position.set(0, 0, AXIS_LENGTH + 0.3);
-axisHelper.add(xLabel);
-axisHelper.add(yLabel);
-axisHelper.add(zLabel);
+
+axisHelper.add(xLabel, yLabel, zLabel);
 
 /* ================= Resize ================= */
 
@@ -67,14 +69,17 @@ controls.target.set(1, 4, 4);
 
 /* ================= Lighting ================= */
 
+// Key light
 const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
 keyLight.position.set(600, 800, 400);
 scene.add(keyLight);
 
+// Fill light
 const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
 fillLight.position.set(-400, 300, -600);
 scene.add(fillLight);
 
+// Ambient base
 scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
 /* ================= Loader ================= */
@@ -111,22 +116,26 @@ function addCount(label, key, min, max) {
     .listen()
     .disable();
 
-  gui.add({ dec: () => {
-    params[key] = Math.max(min, params[key] - 1);
-    createArray();
-  }}, 'dec').name('−');
+  gui.add({
+    dec: () => {
+      params[key] = Math.max(min, params[key] - 1);
+      createArray();
+    }
+  }, 'dec').name('−');
 
-  gui.add({ inc: () => {
-    params[key] = Math.min(max, params[key] + 1);
-    createArray();
-  }}, 'inc').name('+');
+  gui.add({
+    inc: () => {
+      params[key] = Math.min(max, params[key] + 1);
+      createArray();
+    }
+  }, 'inc').name('+');
 }
 
 addCount('Count X', 'countX', 1, 5);
 addCount('Count Y', 'countY', 1, 3);
 addCount('Count Z', 'countZ', 1, 2);
 
-/* -------- Reset Button -------- */
+/* -------- Reset Button (NEW) -------- */
 
 const resetCtrl = gui.add({
   reset: () => {
@@ -136,9 +145,11 @@ const resetCtrl = gui.add({
     createArray();
   }
 }, 'reset').name('Reset');
+
+// 👇 add this
 resetCtrl.domElement.classList.add('gui-reset');
 
-/* -------- Total Modules -------- */
+/* -------- Total Modules Display -------- */
 
 const totalCtrl = gui.add({ t: 0 }, 't').name(`Total Modules: ${params.totalModules}`);
 totalCtrl.domElement.style.pointerEvents = 'none';
@@ -146,15 +157,14 @@ totalCtrl.domElement.querySelector('input').style.display = 'none';
 
 /* ================= Load Model ================= */
 
-loader.load('./module-sample.glb', gltf => {
+loader.load('module-sample.glb', gltf => {
   sourceModel = gltf.scene;
 
   sourceModel.traverse(obj => {
     if (obj.isMesh) {
       obj.castShadow = true;
 
-      // add edges
-      const edges = new THREE.EdgesGeometry(obj.geometry);
+      const edges = new THREE.EdgesGeometry(obj.geometry, 1);
       const line = new THREE.LineSegments(
         edges,
         new THREE.LineBasicMaterial({ color: 0x000000 })
@@ -179,6 +189,7 @@ function createArray() {
   clearArray();
 
   const { countX, countY, countZ, spacingX, spacingY, spacingZ } = params;
+
   const ox = (countX - 1) * spacingX * 0.5;
   const oy = (countY - 1) * spacingY * 0.5;
   const oz = (countZ - 1) * spacingZ * 0.5;
@@ -209,6 +220,7 @@ function createAxisLabel(text, color) {
   const c = document.createElement('canvas');
   const ctx = c.getContext('2d');
   c.width = c.height = size;
+
   ctx.font = 'bold 64px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -236,6 +248,7 @@ function renderAxisHelper() {
   renderer.autoClear = false;
   renderer.clearDepth();
   renderer.setScissorTest(true);
+
   renderer.setViewport(margin, margin, size, size);
   renderer.setScissor(margin, margin, size, size);
   renderer.render(axisScene, axisCamera);
@@ -258,4 +271,4 @@ function animate() {
 }
 
 animate();
-/* ================= End of File ================= */
+
