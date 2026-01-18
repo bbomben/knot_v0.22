@@ -60,6 +60,10 @@ body {
 .lil-gui input[type="number"] {
   background-color: #161212;
   border: 1px solid #ffffff;
+  margin-left: 50px;
+  height: 25px;
+  padding-right: 10px;
+  border-radius: 10px;
 }
 
 .lil-gui button {
@@ -115,4 +119,61 @@ body {
 /* Optional: subtle "utility action" feel */
 .lil-gui .gui-reset .name {
   text-align: center;
+}
+
+/* ================= Count Display Framework ================= */
+
+/* Entire row */
+.gui-count-display {
+  background: #f6f6f6;
+  border: 1px solid #ffffff;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  padding: 4px 6px;
+}
+
+/* Label (Count X, Count Y, Count Z) */
+.gui-count-display .name {
+  font-weight: 600;
+  font-size: 12px;
+  color: #333;
+  letter-spacing: 0.03em;
+}
+
+/* Value container */
+.gui-count-display .controller {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Actual numeric value */
+.gui-count-display input {
+  background: transparent;
+  border: none;
+  color: #fffbfb;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+  margin-right: 6px;
+  width: 48px;
+  padding: 0;
+}
+
+/* Disabled look cleanup */
+.gui-count-display input:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: #ffffff;
+}
+
+/* Make the controller column take full width */
+.gui-count-display .controller {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Optional: fix width so numbers line up */
+.gui-count-display input {
+  width: 100px;
 }

@@ -111,25 +111,61 @@ Object.defineProperty(params, 'totalModules', {
 const gui = new GUI({ title: 'Array Controls', width: 300 });
 
 function addCount(label, key, min, max) {
-  gui.add(params, key)
+
+  // Read-only display
+ const displayCtrl = gui.add(params, key)
     .name(`${label} (${min}–${max})`)
     .listen()
     .disable();
+displayCtrl.domElement.classList.add('gui-count-display');
 
+  // Decrement
   gui.add({
     dec: () => {
       params[key] = Math.max(min, params[key] - 1);
       createArray();
+      updateButtons();
     }
   }, 'dec').name('−');
 
-  gui.add({
+  // Increment (store controller reference)
+  const incCtrl = gui.add({
     inc: () => {
-      params[key] = Math.min(max, params[key] + 1);
-      createArray();
+      if (params[key] < max) {
+        params[key]++;
+        createArray();
+      }
+      updateButtons();
     }
   }, 'inc').name('+');
+
+  // Attach metadata so we can update later
+  incCtrl.__max = max;
+  incCtrl.__key = key;
+
+  incControllers.push(incCtrl);
 }
+const incControllers = [];
+
+function updateButtons() {
+  incControllers.forEach(ctrl => {
+    const hitMax = params[ctrl.__key] >= ctrl.__max;
+    const btn = ctrl.domElement.querySelector('button');
+
+    if (hitMax) {
+      btn.disabled = true;
+      btn.textContent = 'Limit Reached';
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      btn.disabled = false;
+      btn.textContent = '+';
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+  });
+}
+updateButtons();
 
 addCount('Count X', 'countX', 1, 5);
 addCount('Count Y', 'countY', 1, 3);
