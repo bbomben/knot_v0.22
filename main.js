@@ -21,6 +21,14 @@ canvas.style.boxSizing = 'border-box';
 document.body.appendChild(canvas);
 renderer.setClearColor(0xffffff);
 
+const DPR = Math.min(
+  window.devicePixelRatio,
+  window.innerWidth <= 430 ? 2 : 1.5
+);
+renderer.setPixelRatio(DPR);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.physicallyCorrectLights = true;
+
 /* ================= Camera ================= */
 
 const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
@@ -56,7 +64,7 @@ function resize() {
   const h = canvas.clientHeight;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
+  renderer.setSize(w, h, false);
 }
 
 window.addEventListener('resize', resize);
