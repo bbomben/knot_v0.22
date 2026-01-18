@@ -42,7 +42,9 @@ const zLabel = createAxisLabel('Z', '#0000ff');
 xLabel.position.set(AXIS_LENGTH + 0.3, 0, 0);
 yLabel.position.set(0, AXIS_LENGTH + 0.3, 0);
 zLabel.position.set(0, 0, AXIS_LENGTH + 0.3);
-axisHelper.add(xLabel, yLabel, zLabel);
+axisHelper.add(xLabel);
+axisHelper.add(yLabel);
+axisHelper.add(zLabel);
 
 /* ================= Resize ================= */
 
@@ -144,7 +146,6 @@ totalCtrl.domElement.querySelector('input').style.display = 'none';
 
 /* ================= Load Model ================= */
 
-// Important: use relative path to GitHub Pages
 loader.load('./module-sample.glb', gltf => {
   sourceModel = gltf.scene;
 
