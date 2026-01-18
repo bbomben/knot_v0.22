@@ -15,6 +15,7 @@ canvas.style.height = '70vh';
 canvas.style.margin = '0 auto';
 canvas.style.display = 'block';
 canvas.style.border = '1px solid #333';
+canvas.style.borderRadius = '10px';
 canvas.style.boxSizing = 'border-box';
 
 document.body.appendChild(canvas);
@@ -181,7 +182,7 @@ const resetCtrl = gui.add({
     createArray();
     updateButtons();
   }
-}, 'reset').name('Reset');
+}, 'reset').name('RESET');
 
 resetCtrl.domElement.classList.add('gui-reset');
 
@@ -190,6 +191,8 @@ resetCtrl.domElement.classList.add('gui-reset');
 const totalCtrl = gui.add({ t: 0 }, 't').name(`Total Modules: ${params.totalModules}`);
 totalCtrl.domElement.style.pointerEvents = 'none';
 totalCtrl.domElement.querySelector('input').style.display = 'none';
+totalCtrl.domElement.classList.add('gui-total-display');
+
 
 /* ================= Load Model ================= */
 

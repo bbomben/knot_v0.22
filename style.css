@@ -43,12 +43,14 @@ body {
   position: sticky !important;
   top: 20px !important;
   margin: 0 !important;
+  border-radius: 10px;
 }
 
 .lil-gui > .title {
   background-color: #333;
   color: #ff0000;
   font-weight: bold;
+  border-radius: 10px;
 }
 
 .lil-gui li {
@@ -69,6 +71,7 @@ body {
 .lil-gui button {
   background-color: #383838;
   color: white;
+  height: 25px;
 }
 
 /* iPhone 14 specific styling */
@@ -127,7 +130,7 @@ body {
 .gui-count-display {
   background: #f6f6f6;
   border: 1px solid #ffffff;
-  border-radius: 6px;
+
   margin-bottom: 6px;
   padding: 4px 6px;
 }
@@ -176,4 +179,33 @@ body {
 /* Optional: fix width so numbers line up */
 .gui-count-display input {
   width: 100px;
+}
+
+/* ================= Total Modules Display ================= */
+
+.gui-total-display {
+  margin-top: 12px;
+  padding: 10px 12px;
+  height: 25px;
+  background: #111;
+  border-radius: 6px;
+
+  display: flex;
+  align-items: center;
+}
+
+/* Label text */
+.gui-total-display .name {
+  flex: 1;
+
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+
+  color: #ffffff;
+}
+
+/* Remove any leftover controller spacing */
+.gui-total-display .controller {
+  display: none;
 }
