@@ -179,10 +179,10 @@ const resetCtrl = gui.add({
     params.countY = 1;
     params.countZ = 1;
     createArray();
+    updateButtons();
   }
 }, 'reset').name('Reset');
 
-// 👇 add this
 resetCtrl.domElement.classList.add('gui-reset');
 
 /* -------- Total Modules Display -------- */
