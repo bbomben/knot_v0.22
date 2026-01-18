@@ -3,6 +3,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
+/* ================= Scene & Renderer ================= */
+
 const scene = new THREE.Scene();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -15,12 +17,16 @@ canvas.style.display = 'block';
 canvas.style.border = '1px solid #333';
 canvas.style.boxSizing = 'border-box';
 
-document.body.appendChild(renderer.domElement);
+document.body.appendChild(canvas);
+renderer.setClearColor(0xffffff);
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+/* ================= Camera ================= */
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
 camera.position.set(700, 700, 700);
 
-// ---------- Axis helper overlay (Rhino-style) ----------
+/* ================= Axis Helper (SAFE) ================= */
+
 const axisScene = new THREE.Scene();
 
 const axisCamera = new THREE.OrthographicCamera(-3, 3, 3, -3, 0, 10);
@@ -28,100 +34,61 @@ axisCamera.position.set(0, 0, 5);
 axisCamera.lookAt(0, 0, 0);
 
 const axisHelper = new THREE.AxesHelper(2);
-const AXIS_LENGTH = 2;
 axisScene.add(axisHelper);
-// Axis labels
+
+const AXIS_LENGTH = 2;
+
 const xLabel = createAxisLabel('X', '#ff0000');
 const yLabel = createAxisLabel('Y', '#00aa00');
 const zLabel = createAxisLabel('Z', '#0000ff');
 
-// Position labels at axis tips
 xLabel.position.set(AXIS_LENGTH + 0.3, 0, 0);
 yLabel.position.set(0, AXIS_LENGTH + 0.3, 0);
 zLabel.position.set(0, 0, AXIS_LENGTH + 0.3);
 
-// Attach labels to axis helper so they rotate together
-axisHelper.add(xLabel);
-axisHelper.add(yLabel);
-axisHelper.add(zLabel);
+axisHelper.add(xLabel, yLabel, zLabel);
 
+/* ================= Resize ================= */
 
-
-
-renderer.setClearColor(0xFFFFFF);
-
-// Get actual canvas dimensions after DOM insertion and CSS media queries are applied
-// Use requestAnimationFrame to ensure layout has been calculated
-requestAnimationFrame(() => {
-  const containerWidth = canvas.clientWidth;
-  const containerHeight = canvas.clientHeight;
-  
-  camera.aspect = containerWidth / containerHeight;
+function resize() {
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(containerWidth, containerHeight);
-});
+  renderer.setSize(w, h);
+}
 
-// Define resize handler
-const onWindowResize = () => {
-  const containerWidth = canvas.clientWidth;
-  const containerHeight = canvas.clientHeight;
-  camera.aspect = containerWidth / containerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(containerWidth, containerHeight);
-  updateScaleForViewport();
-};
+window.addEventListener('resize', resize);
+requestAnimationFrame(resize);
 
-// Adjust model scale and spacing based on viewport
-const updateScaleForViewport = () => {
-  const baseScale = 0.5;
-  const baseSpacingX = 254;
-  const baseSpacingY = 196;
-  const baseSpacingZ = 178;
-  
-  const isMobile = window.innerWidth < 768;
-  const isSmallMobile = window.innerWidth < 480;
-  
-  let scaleFactor;
-  
-  if (isSmallMobile) {
-    scaleFactor = 0.5; // iPhone SE, small phones
-  } else if (isMobile) {
-    scaleFactor = 0.2; // iPad, larger phones
-  } else {
-    scaleFactor = 1; // Desktop
-  }
-  
-  params.scale = baseScale * scaleFactor;
-  params.spacingX = baseSpacingX * scaleFactor;
-  params.spacingY = baseSpacingY * scaleFactor;
-  params.spacingZ = baseSpacingZ * scaleFactor;
-  
-  createArray();
-};
-
-// Listen for resize events
-window.addEventListener('resize', onWindowResize);
+/* ================= Controls ================= */
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.enablePan = true;
-controls.minDistance = 10;
-controls.maxDistance = 1500;
-controls.target = new THREE.Vector3(1, 4, 4);
-controls.update();
+controls.target.set(1, 4, 4);
 
-const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1);
-dirLight.position.set(3, 0.9, 4);
-scene.add(dirLight);
+/* ================= Lighting ================= */
 
-scene.add(new THREE.HemisphereLight(0xB1E1FF, 0xB97A20, 2));
+// Key light
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+keyLight.position.set(600, 800, 400);
+scene.add(keyLight);
 
+// Fill light
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
+fillLight.position.set(-400, 300, -600);
+scene.add(fillLight);
 
+// Ambient base
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+
+/* ================= Loader ================= */
 
 const loader = new GLTFLoader();
-
 let sourceModel = null;
 let clones = [];
+
+/* ================= Parameters ================= */
 
 const params = {
   countX: 2,
@@ -130,201 +97,176 @@ const params = {
   spacingX: 254,
   spacingY: 196,
   spacingZ: 178,
-  showEdges: true,
-  edgeColor: 0x000000,
-  scale: 0.5,
-  rebuild: () => createArray()
+  scale: 0.5
 };
 
-const gui = new GUI({
-  title: 'Array Controls',      // Panel title
-  width: 300,                    // Panel width
-  closeFolders: false            // Keep folders open by default
+Object.defineProperty(params, 'totalModules', {
+  get() {
+    return params.countX * params.countY * params.countZ;
+  }
 });
 
-// Add countX controls
-gui.add(params, 'countX').listen().name('Count X');
-gui.add({ decrease: () => { params.countX = Math.max(1, params.countX - 1); createArray(); } }, 'decrease').name('−');
-gui.add({ increase: () => { params.countX = Math.min(5, params.countX + 1); createArray(); } }, 'increase').name('+');
+/* ================= GUI ================= */
 
-// Add countY controls
-gui.add(params, 'countY').listen().name('Count Y');
-gui.add({ decrease: () => { params.countY = Math.max(1, params.countY - 1); createArray(); } }, 'decrease').name('−');
-gui.add({ increase: () => { params.countY = Math.min(3, params.countY + 1); createArray(); } }, 'increase').name('+');
+const gui = new GUI({ title: 'Array Controls', width: 300 });
 
-// Add countZ controls
-gui.add(params, 'countZ').listen().name('Count Z');
-gui.add({ decrease: () => { params.countZ = Math.max(1, params.countZ - 1); createArray(); } }, 'decrease').name('−');
-gui.add({ increase: () => { params.countZ = Math.min(5, params.countZ + 1); createArray(); } }, 'increase').name('+');
+function addCount(label, key, min, max) {
+  gui.add(params, key)
+    .name(`${label} (${min}–${max})`)
+    .listen()
+    .disable();
 
-/* gui.add(params, 'rebuild'); */
+  gui.add({
+    dec: () => {
+      params[key] = Math.max(min, params[key] - 1);
+      createArray();
+    }
+  }, 'dec').name('−');
 
-loader.load('module-sample.glb', (gltf) => {
+  gui.add({
+    inc: () => {
+      params[key] = Math.min(max, params[key] + 1);
+      createArray();
+    }
+  }, 'inc').name('+');
+}
+
+addCount('Count X', 'countX', 1, 5);
+addCount('Count Y', 'countY', 1, 3);
+addCount('Count Z', 'countZ', 1, 2);
+
+/* -------- Reset Button (NEW) -------- */
+
+const resetCtrl = gui.add({
+  reset: () => {
+    params.countX = 1;
+    params.countY = 1;
+    params.countZ = 1;
+    createArray();
+  }
+}, 'reset').name('Reset');
+resetCtrl.domElement.classList.add('gui-reset');
+
+/* -------- Total Modules Display -------- */
+
+const totalCtrl = gui.add({ t: 0 }, 't').name(`Total Modules: ${params.totalModules}`);
+totalCtrl.domElement.style.pointerEvents = 'none';
+totalCtrl.domElement.querySelector('input').style.display = 'none';
+
+/* ================= Load Model ================= */
+
+loader.load('module-sample.glb', gltf => {
   sourceModel = gltf.scene;
-  sourceModel.traverse(n => { if (n.isMesh) n.castShadow = true; });
-  sourceModel.scale.set(params.scale, params.scale, params.scale);
+
+  sourceModel.traverse(obj => {
+    if (obj.isMesh) {
+      obj.castShadow = true;
+
+      const edges = new THREE.EdgesGeometry(obj.geometry, 1);
+      const line = new THREE.LineSegments(
+        edges,
+        new THREE.LineBasicMaterial({ color: 0x000000 })
+      );
+      obj.add(line);
+    }
+  });
+
   createArray();
-}, undefined, (err) => {
-  console.error('GLTF load error:', err);
 });
+
+/* ================= Array Logic ================= */
 
 function clearArray() {
-  for (const c of clones) {
-    scene.remove(c);
-    disposeEdges(c);
-  }
+  clones.forEach(c => scene.remove(c));
   clones = [];
-}
-
-function disposeEdges(root) {
-  root.traverse((child) => {
-    if (child.isLineSegments) {
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) child.material.dispose();
-    }
-  });
-}
-
-function createEdgesForClone(clone) {
-  clone.traverse((child) => {
-    if (child.isMesh && child.geometry) {
-      const edgesGeo = new THREE.EdgesGeometry(child.geometry);
-      const mat = new THREE.LineBasicMaterial({
-        color: params.edgeColor,
-        depthTest: true,
-        depthWrite: false
-      });
-      const lines = new THREE.LineSegments(edgesGeo, mat);
-      lines.renderOrder = 999; // draw on top
-      child.add(lines);
-    }
-  });
 }
 
 function createArray() {
   if (!sourceModel) return;
+
   clearArray();
 
-  const cx = params.countX;
-  const cy = params.countY;
-  const cz = params.countZ;
-  const sx = params.spacingX;
-  const sy = params.spacingY;
-  const sz = params.spacingZ;
+  const { countX, countY, countZ, spacingX, spacingY, spacingZ } = params;
 
-  const offsetX = (cx - 1) * sx * 0.5;
-  const offsetY = (cy - 1) * sy * 0.5;
-  const offsetZ = (cz - 1) * sz * 0.5;
+  const ox = (countX - 1) * spacingX * 0.5;
+  const oy = (countY - 1) * spacingY * 0.5;
+  const oz = (countZ - 1) * spacingZ * 0.5;
 
-  for (let ix = 0; ix < cx; ix++) {
-    for (let iy = 0; iy < cy; iy++) {
-      for (let iz = 0; iz < cz; iz++) {
+  for (let x = 0; x < countX; x++) {
+    for (let y = 0; y < countY; y++) {
+      for (let z = 0; z < countZ; z++) {
         const clone = sourceModel.clone(true);
-        clone.scale.set(params.scale, params.scale, params.scale);
-        clone.position.set(ix * sx - offsetX, iy * sy - offsetY, iz * sz - offsetZ);
-
-        if (params.showEdges) {
-          createEdgesForClone(clone);
-        }
-
+        clone.scale.setScalar(params.scale);
+        clone.position.set(
+          x * spacingX - ox,
+          y * spacingY - oy,
+          z * spacingZ - oz
+        );
         scene.add(clone);
         clones.push(clone);
       }
     }
   }
+
+  totalCtrl.name(`Total Modules: ${params.totalModules}`);
 }
 
-function renderAxisHelper() {
-  // Default size and margin
-  let axisSize = 120; // default overlay size in pixels
-  let margin = 5;    // default distance from bottom-left
+/* ================= Axis Label Helper ================= */
 
-  // Make it tighter and smaller for mobile
-  if (window.innerWidth <= 480) {       // small phones
-    axisSize = 100;
-    margin = 0;
-  } else if (window.innerWidth <= 768) { // tablets / medium
-    axisSize = 150;
-    margin = 0;
-  }
-
-  renderer.autoClear = false;
-  renderer.clearDepth();
-  renderer.setScissorTest(true);
-
-  renderer.setViewport(
-    margin,
-    margin,
-    axisSize,
-    axisSize
-  );
-
-  renderer.setScissor(
-    margin,
-    margin,
-    axisSize,
-    axisSize
-  );
-
-  renderer.render(axisScene, axisCamera);
-
-  renderer.setScissorTest(false);
-  renderer.autoClear = true;
-}
-
-
-// Create and add axis labels
 function createAxisLabel(text, color) {
   const size = 128;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d');
+  c.width = c.height = size;
 
-  const ctx = canvas.getContext('2d');
-
-  ctx.clearRect(0, 0, size, size);
   ctx.font = 'bold 64px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = color;
   ctx.fillText(text, size / 2, size / 2);
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.minFilter = THREE.LinearFilter;
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(c),
+      transparent: true,
+      depthTest: false
+    })
+  );
 
-  const material = new THREE.SpriteMaterial({
-    map: texture,
-    transparent: true,
-    depthTest: false // always visible
-  });
-
-  const sprite = new THREE.Sprite(material);
-  sprite.scale.set(1.2, 1.2, 1.2); // label size in axis scene units
-
+  sprite.scale.set(1.2, 1.2, 1.2);
   return sprite;
 }
 
+/* ================= Render ================= */
+
+function renderAxisHelper() {
+  const size = 120;
+  const margin = 5;
+
+  renderer.autoClear = false;
+  renderer.clearDepth();
+  renderer.setScissorTest(true);
+
+  renderer.setViewport(margin, margin, size, size);
+  renderer.setScissor(margin, margin, size, size);
+  renderer.render(axisScene, axisCamera);
+
+  renderer.setScissorTest(false);
+  renderer.autoClear = true;
+}
 
 function animate() {
   requestAnimationFrame(animate);
 
   controls.update();
 
-  const size = renderer.getSize(new THREE.Vector2());
-
-  // Main scene
-  renderer.setViewport(0, 0, size.x, size.y);
-  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
   renderer.clear();
   renderer.render(scene, camera);
 
-  // Axis overlay (screen-space)
   axisHelper.quaternion.copy(camera.quaternion);
-  axisCamera.updateProjectionMatrix();
-
   renderAxisHelper();
 }
 
 animate();
-
-
+/* ================= End of File ================= */

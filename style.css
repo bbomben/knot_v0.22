@@ -76,3 +76,43 @@ body {
     height: 45vh !important;
   }
 }
+
+/* ================================
+   lil-gui Reset Button Styling
+   ================================ */
+
+/* Visual separation from Count Z */
+.lil-gui .gui-reset {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+/* Reset button itself */
+.lil-gui .gui-reset button {
+  width: 100%;
+  background: #f5f5f5;
+  color: #333;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-radius: 4px;
+  height: 40px;
+
+  cursor: pointer;
+}
+
+/* Hover state */
+.lil-gui .gui-reset button:hover {
+  background: #ff0000;
+  border-color: #ff0000;
+}
+
+/* Active (click) state */
+.lil-gui .gui-reset button:active {
+  background: #d6d6d6;
+}
+
+/* Optional: subtle "utility action" feel */
+.lil-gui .gui-reset .name {
+  text-align: center;
+}
