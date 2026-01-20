@@ -115,6 +115,69 @@ Object.defineProperty(params, 'totalModules', {
   }
 });
 
+/* ================= Layer Material Control ================= */
+
+const layerMaterialParams = {
+  layerName: ['knots', 'knots_1', 'knots_2', 'knots_3', 'knots_4', 'knots_5', 'knots_6', 'knots_7', 'knots_8'], // <-- you will change this
+  color: 'Light Grey'
+};
+
+const layerColors = {
+  'Light Grey': 0xFFFFFF,
+  'Red': 0xFF0000,
+  'Black': 0x303234,
+  'Yellow': 0xFFFF00,
+};
+
+const layerMaterial = new THREE.MeshStandardMaterial({
+  roughness: 0.6,
+  metalness: 0.05
+});
+
+function replaceMeshMaterial(mesh, colorHex) {
+  // Dispose old materials safely
+  if (Array.isArray(mesh.material)) {
+    mesh.material.forEach(m => m.dispose());
+  } else if (mesh.material) {
+    mesh.material.dispose();
+  }
+
+  mesh.material = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    roughness: 0.6,
+    metalness: 0.05
+  });
+
+  mesh.material.needsUpdate = true;
+}
+
+function applyMaterialToLayer() {
+  if (!sourceModel) return;
+
+  const colorHex = layerColors[layerMaterialParams.color];
+
+  sourceModel.traverse(obj => {
+
+    // Match ALL objects with this name
+    if (layerMaterialParams.layerName.includes(obj.name)) {
+
+      // If this object IS a mesh
+      if (obj.isMesh) {
+        replaceMeshMaterial(obj, colorHex);
+      }
+
+      // If this object is a group, affect all children
+      obj.traverse(child => {
+        if (child.isMesh) {
+          replaceMeshMaterial(child, colorHex);
+        }
+      });
+    }
+  });
+
+  createArray();
+}
+
 /* ================= GUI ================= */
 
 const gui = new GUI({ title: 'Array Controls', width: 300 });
@@ -137,6 +200,7 @@ displayCtrl.domElement.classList.add('gui-count-display');
     }
   }, 'dec').name('−');
 
+ 
   // Increment (store controller reference)
   const incCtrl = gui.add({
     inc: () => {
@@ -180,7 +244,18 @@ addCount('Count X', 'countX', 1, 5);
 addCount('Count Y', 'countY', 1, 3);
 addCount('Count Z', 'countZ', 1, 2);
 
-/* -------- Reset Button (NEW) -------- */
+const layerFolder = gui.addFolder('Layer Material');
+
+layerFolder
+  .add(layerMaterialParams, 'color', Object.keys(layerColors))
+  .name('Knot Colour')
+  .onChange(() => {
+    applyMaterialToLayer();
+  });
+
+layerFolder.open();
+
+/* -------- Reset Button -------- */
 
 const resetCtrl = gui.add({
   reset: () => {
@@ -207,6 +282,17 @@ totalCtrl.domElement.classList.add('gui-total-display');
 loader.load('module-sample.glb', gltf => {
   sourceModel = gltf.scene;
 
+  /* ===== FULL GLTF HIERARCHY DEBUG ===== */
+sourceModel.traverse(obj => {
+  console.log(
+    obj.type,
+    obj.name || '(no name)',
+    obj.isMesh ? '← mesh' : ''
+  );
+});
+/* ==================================== */
+
+
   sourceModel.traverse(obj => {
     if (obj.isMesh) {
       obj.castShadow = true;
@@ -220,6 +306,7 @@ loader.load('module-sample.glb', gltf => {
     }
   });
 
+  applyMaterialToLayer();
   createArray();
 });
 
