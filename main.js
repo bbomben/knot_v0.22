@@ -101,8 +101,8 @@ let clones = [];
 
 const params = {
   countX: 2,
-  countY: 1,
-  countZ: 2,
+  countY: 2,
+  countZ: 1,
   spacingX: 254,
   spacingY: 196,
   spacingZ: 178,
