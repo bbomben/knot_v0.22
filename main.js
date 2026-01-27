@@ -31,7 +31,7 @@ renderer.physicallyCorrectLights = true;
 
 /* ================= Camera ================= */
 
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 4000);
 camera.position.set(700, 700, 700);
 
 /* ================= Axis Helper (SAFE) ================= */
@@ -75,6 +75,7 @@ requestAnimationFrame(resize);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.target.set(1, 4, 4);
+controls.maxDistance = 3500;
 
 /* ================= Lighting ================= */
 
