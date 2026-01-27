@@ -95,6 +95,7 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 /* ================= Loader ================= */
 
 const loader = new GLTFLoader();
+let activeModelKey = 'moduleA';
 let sourceModel = null;
 let clones = [];
 
@@ -115,6 +116,32 @@ Object.defineProperty(params, 'totalModules', {
     return params.countX * params.countY * params.countZ;
   }
 });
+
+/* ================= Model Registry ================= */
+/* === NEW === */
+
+const MODEL_DEFS = {
+  moduleA: {
+    label: 'Module A',
+    url: 'module-sample.glb',
+
+    spacing: { x: 254, y: 196, z: 178 },
+    scale: 0.5,
+
+    layerNames: [
+      'knots', 'knots_1', 'knots_2', 'knots_3',
+      'knots_4', 'knots_5', 'knots_6', 'knots_7', 'knots_8'
+    ]
+  },
+
+  moduleB: {
+    label: 'Module B',
+    url: 'module-square-sample.glb',   // ← YOU change this
+    spacing: { x: 188, y: 196, z: 178 },
+    scale: 0.5,
+    layerNames: ['knots']    // ← YOU change this
+  }
+};
 
 /* ================= Layer Material Control ================= */
 
@@ -182,6 +209,25 @@ function applyMaterialToLayer() {
 /* ================= GUI ================= */
 
 const gui = new GUI({ title: 'Array Controls', width: 300 });
+/* ================= Model Switcher ================= */
+/* === NEW === */
+
+const modelParams = {
+  model: activeModelKey
+};
+
+gui.add(
+  modelParams,
+  'model',
+  Object.fromEntries(
+    Object.entries(MODEL_DEFS).map(([k, v]) => [v.label, k])
+  )
+)
+.name('Module Type')
+.onChange(key => {
+  activeModelKey = key;
+  loadModel(key);
+});
 
 function addCount(label, key, min, max) {
 
@@ -277,39 +323,58 @@ totalCtrl.domElement.style.pointerEvents = 'none';
 totalCtrl.domElement.querySelector('input').style.display = 'none';
 totalCtrl.domElement.classList.add('gui-total-display');
 
+/* ================= Model Loader ================= */
+/* === NEW === */
+
+function loadModel(key) {
+  const def = MODEL_DEFS[key];
+  if (!def) return;
+
+  clearArray();
+
+  loader.load(def.url, gltf => {
+    sourceModel = gltf.scene;
+
+    console.group('GLTF FULL TREE');
+sourceModel.traverse(o => {
+  console.log(
+    o.type,
+    o.name || '(no name)',
+    o.isMesh ? '← mesh' : ''
+  );
+});
+console.groupEnd();
+
+
+    // Apply model-specific defaults
+    params.spacingX = def.spacing.x;
+    params.spacingY = def.spacing.y;
+    params.spacingZ = def.spacing.z;
+    params.scale = def.scale;
+
+    layerMaterialParams.layerName = def.layerNames;
+
+    sourceModel.traverse(obj => {
+      if (obj.isMesh) {
+        obj.castShadow = true;
+
+        const edges = new THREE.EdgesGeometry(obj.geometry, 1);
+        const line = new THREE.LineSegments(
+          edges,
+          new THREE.LineBasicMaterial({ color: 0x000000 })
+        );
+        obj.add(line);
+      }
+    });
+
+    applyMaterialToLayer();
+    createArray();
+  });
+}
 
 /* ================= Load Model ================= */
 
-loader.load('module-sample.glb', gltf => {
-  sourceModel = gltf.scene;
-
-  /* ===== FULL GLTF HIERARCHY DEBUG ===== */
-sourceModel.traverse(obj => {
-  console.log(
-    obj.type,
-    obj.name || '(no name)',
-    obj.isMesh ? '← mesh' : ''
-  );
-});
-/* ==================================== */
-
-
-  sourceModel.traverse(obj => {
-    if (obj.isMesh) {
-      obj.castShadow = true;
-
-      const edges = new THREE.EdgesGeometry(obj.geometry, 1);
-      const line = new THREE.LineSegments(
-        edges,
-        new THREE.LineBasicMaterial({ color: 0x000000 })
-      );
-      obj.add(line);
-    }
-  });
-
-  applyMaterialToLayer();
-  createArray();
-});
+loadModel(activeModelKey);
 
 /* ================= Array Logic ================= */
 
