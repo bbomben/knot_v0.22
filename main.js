@@ -118,7 +118,6 @@ Object.defineProperty(params, 'totalModules', {
 });
 
 /* ================= Model Registry ================= */
-/* === NEW === */
 
 const MODEL_DEFS = {
   moduleA: {
@@ -136,11 +135,24 @@ const MODEL_DEFS = {
 
   moduleB: {
     label: 'Module B',
-    url: 'module-square-sample.glb',   // ← YOU change this
+    url: 'module-square-sample.glb',  
     spacing: { x: 188, y: 196, z: 178 },
     scale: 0.5,
-    layerNames: ['knots']    // ← YOU change this
-  }
+    layerNames: ['knots', 'knots_1', 'knots_2', 'knots_3',
+      'knots_4', 'knots_5', 'knots_6', 'knots_7', 'knots_8'
+    ]  
+  },
+
+    moduleC: {
+    label: 'Module C',
+    url: 'module-squat-sample.glb',
+    spacing: { x: 303.3, y: 146.1, z: 178 },
+    scale: 0.5,
+    layerNames: [
+      'knots', 'knots_1', 'knots_2', 'knots_3',
+      'knots_4', 'knots_5', 'knots_6', 'knots_7', 'knots_8'
+    ]
+  },
 };
 
 /* ================= Layer Material Control ================= */
@@ -334,17 +346,6 @@ function loadModel(key) {
 
   loader.load(def.url, gltf => {
     sourceModel = gltf.scene;
-
-    console.group('GLTF FULL TREE');
-sourceModel.traverse(o => {
-  console.log(
-    o.type,
-    o.name || '(no name)',
-    o.isMesh ? '← mesh' : ''
-  );
-});
-console.groupEnd();
-
 
     // Apply model-specific defaults
     params.spacingX = def.spacing.x;
