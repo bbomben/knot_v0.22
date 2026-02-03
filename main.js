@@ -216,7 +216,13 @@ function applyMaterialToLayer() {
   });
 
   createArray();
+  // === NEW ===
+updateDimensions();
 }
+
+// === NEW: Group to hold arrayed modules ONLY ===
+const arrayGroup = new THREE.Group();
+scene.add(arrayGroup);
 
 /* ================= GUI ================= */
 
@@ -347,6 +353,8 @@ function loadModel(key) {
   loader.load(def.url, gltf => {
     sourceModel = gltf.scene;
 
+    
+
     // Apply model-specific defaults
     params.spacingX = def.spacing.x;
     params.spacingY = def.spacing.y;
@@ -380,9 +388,10 @@ loadModel(activeModelKey);
 /* ================= Array Logic ================= */
 
 function clearArray() {
-  clones.forEach(c => scene.remove(c));
+  clones.forEach(c => arrayGroup.remove(c)); 
   clones = [];
 }
+
 
 function createArray() {
   if (!sourceModel) return;
@@ -405,14 +414,26 @@ function createArray() {
           y * spacingY - oy,
           z * spacingZ - oz
         );
-        scene.add(clone);
+        arrayGroup.add(clone);
         clones.push(clone);
       }
     }
   }
 
   totalCtrl.name(`Total Modules: ${params.totalModules}`);
+
+  // === NEW ===
+  updateDimensions();
 }
+
+
+// === NEW: Dimension helpers ===
+const dimensionGroup = new THREE.Group();
+scene.add(dimensionGroup);
+
+const tmpBox = new THREE.Box3();
+const tmpSize = new THREE.Vector3();
+const tmpCenter = new THREE.Vector3();
 
 /* ================= Axis Label Helper ================= */
 
@@ -438,6 +459,97 @@ function createAxisLabel(text, color) {
 
   sprite.scale.set(1.2, 1.2, 1.2);
   return sprite;
+}
+
+// === NEW: Dimension text sprite ===
+function createDimensionLabel(text) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = 256;
+  canvas.height = 64;
+
+  ctx.font = '40px Arial';
+  ctx.fillStyle = '#f10000';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.textWeight = 'bold';
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false
+    })
+  );
+
+  sprite.scale.set(120, 30, 1);
+  return sprite;
+}
+
+// === NEW: Draw single dimension ===
+function drawDimension(start, end, labelText) {
+  const geom = new THREE.BufferGeometry().setFromPoints([start, end]);
+  const line = new THREE.Line(
+    geom,
+    new THREE.LineBasicMaterial({ color: 0x333333 })
+  );
+  dimensionGroup.add(line);
+
+  const mid = start.clone().lerp(end, 0.5);
+  const label = createDimensionLabel(labelText);
+  label.position.copy(mid);
+
+  dimensionGroup.add(label);
+}
+
+// === NEW: Update dimensions from bounding box ===
+function updateDimensions() {
+// Clear previous dimensions
+while (dimensionGroup.children.length) {
+  const obj = dimensionGroup.children.pop();
+  if (obj.geometry) obj.geometry.dispose();
+  if (obj.material) obj.material.dispose();
+}
+
+
+  if (!clones.length) return;
+
+  tmpBox.setFromObject(arrayGroup);  // includes all clones
+  tmpBox.getSize(tmpSize);
+  tmpBox.getCenter(tmpCenter);
+
+  const min = tmpBox.min;
+  const max = tmpBox.max;
+
+  const offset = 120;
+
+
+  // X — Width
+  drawDimension(
+    new THREE.Vector3(min.x, min.y - offset, min.z),
+    new THREE.Vector3(max.x, min.y - offset, min.z),
+    `${(tmpSize.x / params.scale).toFixed(2)} mm`
+
+  );
+
+  // Y — Height
+  drawDimension(
+    new THREE.Vector3(min.x - offset, min.y, min.z),
+    new THREE.Vector3(min.x - offset, max.y, min.z),
+    `${(tmpSize.y / params.scale).toFixed(2)} mm`
+  );
+
+  // Z — Depth
+  drawDimension(
+    new THREE.Vector3(min.x, min.y - offset, min.z),
+    new THREE.Vector3(min.x, min.y - offset, max.z),
+    `${(tmpSize.z / params.scale).toFixed(2)} mm`
+  );
 }
 
 /* ================= Render ================= */
@@ -468,6 +580,12 @@ function animate() {
   renderer.render(scene, camera);
 
   axisHelper.quaternion.copy(camera.quaternion);
+  // === NEW: Billboard dimension labels ===
+dimensionGroup.children.forEach(obj => {
+  if (obj.isSprite) {
+    obj.quaternion.copy(camera.quaternion);
+  }
+});
   renderAxisHelper();
 }
 
