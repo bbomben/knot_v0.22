@@ -9,21 +9,33 @@ const scene = new THREE.Scene();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 const canvas = renderer.domElement;
-canvas.style.width = '90%';
-canvas.style.maxWidth = '1550px';
-canvas.style.height = '70vh';
-canvas.style.margin = '0 auto';
+canvas.style.width = '100%';
 canvas.style.display = 'block';
+canvas.style.height = '70vh';
 canvas.style.border = '1px solid #333';
-canvas.style.borderRadius = '10px';
+canvas.style.borderRadius = '5px';
 canvas.style.boxSizing = 'border-box';
 
-document.body.appendChild(canvas);
+
+/* ================= Canvas Wrapper ================= */
+const viewerWrapper = document.createElement('div');
+viewerWrapper.style.position = 'relative';
+viewerWrapper.style.width = '200%';
+viewerWrapper.style.maxWidth = '1550px';
+viewerWrapper.style.margin = '0 auto';
+viewerWrapper.style.boxSizing = 'border-box';
+viewerWrapper.style.boxSizing = 'border-box';
+viewerWrapper.style.display = 'block';
+
+viewerWrapper.appendChild(canvas);
+document.body.appendChild(viewerWrapper);
+
 renderer.setClearColor(0xffffff);
 
 const DPR = Math.min(
   window.devicePixelRatio,
   window.innerWidth <= 430 ? 2 : 1.5
+  
 );
 renderer.setPixelRatio(DPR);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -76,6 +88,36 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.target.set(1, 4, 4);
 controls.maxDistance = 3500;
+// === Save initial camera state ===
+const initialCameraPosition = camera.position.clone();
+const initialTarget = controls.target.clone();
+
+/* ================= Camera Reset Button ================= */
+
+const cameraResetBtn = document.createElement('button');
+cameraResetBtn.textContent = 'Reset View';
+
+cameraResetBtn.style.position = 'absolute';
+cameraResetBtn.style.top = '15px';
+cameraResetBtn.style.left = '15px';
+cameraResetBtn.style.padding = '8px 14px';
+cameraResetBtn.style.background = '#ffffff';
+cameraResetBtn.style.border = '1px solid #333';
+cameraResetBtn.style.borderRadius = '6px';
+cameraResetBtn.style.cursor = 'pointer';
+cameraResetBtn.style.fontWeight = 'bold';
+cameraResetBtn.style.zIndex = '10';
+cameraResetBtn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
+
+viewerWrapper.appendChild(cameraResetBtn);
+
+
+cameraResetBtn.addEventListener('click', () => {
+  camera.position.copy(initialCameraPosition);
+  controls.target.copy(initialTarget);
+  controls.update();
+});
+
 
 /* ================= Lighting ================= */
 
@@ -91,6 +133,19 @@ scene.add(fillLight);
 
 // Ambient base
 scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+
+/* ================= Grid (Rhino-style ground) ================= */
+
+const grid = new THREE.GridHelper(
+  5000,   // size
+  100,    // divisions
+  0x888888, // center line color
+  0xdddddd  // grid color
+);
+
+grid.position.y = 0;     // ground plane at world 0
+scene.add(grid);
+
 
 /* ================= Loader ================= */
 
@@ -412,7 +467,7 @@ function createArray() {
   const { countX, countY, countZ, spacingX, spacingY, spacingZ } = params;
 
   const ox = (countX - 1) * spacingX * 0.5;
-  const oy = (countY - 1) * spacingY * 0.5;
+  /*const oy = (countY - 1) * spacingY * 0.5; */
   const oz = (countZ - 1) * spacingZ * 0.5;
 
   for (let x = 0; x < countX; x++) {
@@ -420,11 +475,12 @@ function createArray() {
       for (let z = 0; z < countZ; z++) {
         const clone = sourceModel.clone(true);
         clone.scale.setScalar(params.scale);
-        clone.position.set(
-          x * spacingX - ox,
-          y * spacingY - oy,
-          z * spacingZ - oz
-        );
+clone.position.set(
+  x * spacingX - ox,
+  y * spacingY,   // ← no centering
+  z * spacingZ - oz
+);
+
         arrayGroup.add(clone);
         clones.push(clone);
       }
