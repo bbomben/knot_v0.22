@@ -108,7 +108,9 @@ const params = {
   spacingX: 254,
   spacingY: 196,
   spacingZ: 178,
-  scale: 0.5
+  scale: 0.5,
+  showDimensions: true,
+  units: 'Metric'
 };
 
 Object.defineProperty(params, 'totalModules', {
@@ -216,8 +218,7 @@ function applyMaterialToLayer() {
   });
 
   createArray();
-  // === NEW ===
-updateDimensions();
+  updateDimensions();
 }
 
 // === NEW: Group to hold arrayed modules ONLY ===
@@ -246,6 +247,27 @@ gui.add(
   activeModelKey = key;
   loadModel(key);
 });
+
+gui
+  .add(layerMaterialParams, 'color', Object.keys(layerColors))
+  .name('Knot Colour')
+  .onChange(() => {
+    applyMaterialToLayer();
+  });
+
+gui
+  .add(params, 'showDimensions')
+  .name('Dimensions')
+  .onChange(value => {
+    dimensionGroup.visible = value;
+  });
+
+gui
+  .add(params, 'units', ['Metric', 'Imperial'])
+  .name('Units')
+  .onChange(() => {
+    updateDimensions();
+  });
 
 function addCount(label, key, min, max) {
 
@@ -308,17 +330,6 @@ updateButtons();
 addCount('Count X', 'countX', 1, 5);
 addCount('Count Y', 'countY', 1, 3);
 addCount('Count Z', 'countZ', 1, 2);
-
-const layerFolder = gui.addFolder('Layer Material');
-
-layerFolder
-  .add(layerMaterialParams, 'color', Object.keys(layerColors))
-  .name('Knot Colour')
-  .onChange(() => {
-    applyMaterialToLayer();
-  });
-
-layerFolder.open();
 
 /* -------- Reset Button -------- */
 
@@ -422,7 +433,6 @@ function createArray() {
 
   totalCtrl.name(`Total Modules: ${params.totalModules}`);
 
-  // === NEW ===
   updateDimensions();
 }
 
@@ -493,22 +503,105 @@ function createDimensionLabel(text) {
 
 // === NEW: Draw single dimension ===
 function drawDimension(start, end, labelText) {
-  const geom = new THREE.BufferGeometry().setFromPoints([start, end]);
-  const line = new THREE.Line(
-    geom,
-    new THREE.LineBasicMaterial({ color: 0x333333 })
-  );
-  dimensionGroup.add(line);
+
+  const direction = new THREE.Vector3().subVectors(end, start);
+  const length = direction.length();
+  direction.normalize();
+
+  const gap = 100; // space around text
+  const tickSize = 40;
 
   const mid = start.clone().lerp(end, 0.5);
+
+  const gapStart = mid.clone().addScaledVector(direction, -gap / 2);
+  const gapEnd = mid.clone().addScaledVector(direction, gap / 2);
+
+  const material = new THREE.LineBasicMaterial({ color: 0x333333 });
+
+  // --- Left segment
+  const leftGeom = new THREE.BufferGeometry().setFromPoints([start, gapStart]);
+  const leftLine = new THREE.Line(leftGeom, material);
+  dimensionGroup.add(leftLine);
+
+  // --- Right segment
+  const rightGeom = new THREE.BufferGeometry().setFromPoints([gapEnd, end]);
+  const rightLine = new THREE.Line(rightGeom, material);
+  dimensionGroup.add(rightLine);
+
+  // --- Tick marks (45° architectural style)
+
+function drawTick(point, dir) {
+  // Choose an arbitrary "up" vector
+  let up = new THREE.Vector3(0, 1, 0);
+  if (Math.abs(dir.y) > 0.99) up.set(1, 0, 0); // avoid parallel
+
+  // Compute a perpendicular vector
+  const perp = new THREE.Vector3().crossVectors(dir, up).normalize();
+
+  const p1 = point.clone().addScaledVector(perp, tickSize / 2);
+  const p2 = point.clone().addScaledVector(perp, -tickSize / 2);
+
+  const tickGeom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+  const tick = new THREE.Line(tickGeom, material);
+  dimensionGroup.add(tick);
+}
+
+  drawTick(start, direction);
+  drawTick(end, direction);
+
+  // --- Label
   const label = createDimensionLabel(labelText);
   label.position.copy(mid);
-
   dimensionGroup.add(label);
+}
+
+
+function formatDimension(mmValue) {
+
+  if (params.units === 'Metric') {
+    return `${mmValue.toFixed(0)} mm`;
+  }
+
+  // --- Imperial ---
+  const totalInches = mmValue / 25.4;
+
+  const feet = Math.floor(totalInches / 12);
+  let inches = totalInches - (feet * 12);
+
+  // Round to nearest 1/4"
+  const quarterInches = Math.round(inches * 4) / 4;
+
+  const wholeInches = Math.floor(quarterInches);
+  const fraction = quarterInches - wholeInches;
+
+  const fractionMap = {
+    0.25: '1/4',
+    0.5: '1/2',
+    0.75: '3/4'
+  };
+
+  let fractionText = fractionMap[fraction] || '';
+
+  // Handle rollover case (like 11.75 rounding to 12.00)
+  let finalFeet = feet;
+  let finalInches = wholeInches;
+
+  if (wholeInches === 12) {
+    finalFeet += 1;
+    finalInches = 0;
+  }
+
+  if (fractionText) {
+    return `${finalFeet}'-${finalInches} ${fractionText}"`;
+  } else {
+    return `${finalFeet}'-${finalInches}"`;
+  }
 }
 
 // === NEW: Update dimensions from bounding box ===
 function updateDimensions() {
+
+  
 // Clear previous dimensions
 while (dimensionGroup.children.length) {
   const obj = dimensionGroup.children.pop();
@@ -533,7 +626,8 @@ while (dimensionGroup.children.length) {
   drawDimension(
     new THREE.Vector3(min.x, min.y - offset, min.z),
     new THREE.Vector3(max.x, min.y - offset, min.z),
-    `${(tmpSize.x / params.scale).toFixed(2)} mm`
+    formatDimension(tmpSize.x / params.scale)
+
 
   );
 
@@ -541,14 +635,16 @@ while (dimensionGroup.children.length) {
   drawDimension(
     new THREE.Vector3(min.x - offset, min.y, min.z),
     new THREE.Vector3(min.x - offset, max.y, min.z),
-    `${(tmpSize.y / params.scale).toFixed(2)} mm`
+    formatDimension(tmpSize.y / params.scale)
+
   );
 
   // Z — Depth
   drawDimension(
     new THREE.Vector3(min.x, min.y - offset, min.z),
     new THREE.Vector3(min.x, min.y - offset, max.z),
-    `${(tmpSize.z / params.scale).toFixed(2)} mm`
+    formatDimension(tmpSize.z / params.scale)
+
   );
 }
 
