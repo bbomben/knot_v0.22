@@ -118,7 +118,6 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 
-    // Keep ortho frustum in sync on resize
   if (activeCamera === orthoCamera) {
     const aspect = w / h;
     const halfH = (orthoCamera.top + Math.abs(orthoCamera.bottom)) / 2;
@@ -166,36 +165,98 @@ cameraResetBtn.addEventListener('click', () => {
   controls.update();
 });
 
-/* ================= View Toggle Button ================= */
+/* ================= View Dropdown ================= */
 
 const views = ['Perspective', 'Top', 'Front', 'Right'];
-let currentViewIndex = 0;
+let activeView = 'Perspective';
 
+const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10000);
+let activeCamera = camera;
+
+// Wrapper
+const viewBtnWrapper = document.createElement('div');
+viewBtnWrapper.style.position = 'absolute';
+viewBtnWrapper.style.top = '52px';
+viewBtnWrapper.style.left = '15px';
+viewBtnWrapper.style.zIndex = '11';
+viewerWrapper.appendChild(viewBtnWrapper);
+
+// Main button
 const viewToggleBtn = document.createElement('button');
-viewToggleBtn.textContent = 'Perspective';
-viewToggleBtn.style.position = 'absolute';
-viewToggleBtn.style.top = '52px'; // sits just below Reset View
-viewToggleBtn.style.left = '15px';
+viewToggleBtn.textContent = 'Perspective ▾';
 viewToggleBtn.style.padding = '8px 14px';
 viewToggleBtn.style.background = '#ffffff';
 viewToggleBtn.style.border = '1px solid #333';
 viewToggleBtn.style.borderRadius = '6px';
 viewToggleBtn.style.cursor = 'pointer';
 viewToggleBtn.style.fontWeight = 'bold';
-viewToggleBtn.style.zIndex = '10';
 viewToggleBtn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
-viewToggleBtn.style.minWidth = '90px';
+viewToggleBtn.style.minWidth = '130px';
+viewToggleBtn.style.textAlign = 'left';
 viewToggleBtn.classList.add('reset-btn');
-viewerWrapper.appendChild(viewToggleBtn);
+viewBtnWrapper.appendChild(viewToggleBtn);
 
-// Ortho camera shared instance
-const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10000);
-let activeCamera = camera; // start with perspective
+// Dropdown
+const viewDropdown = document.createElement('div');
+viewDropdown.style.cssText = `
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #333;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+  min-width: 130px;
+  z-index: 12;
+`;
+viewBtnWrapper.appendChild(viewDropdown);
+
+views.forEach((viewName, i) => {
+  const item = document.createElement('button');
+  item.textContent = viewName;
+  item.style.cssText = `
+    display: block;
+    width: 100%;
+    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: ${i < views.length - 1 ? '1px solid #eee' : 'none'};
+    cursor: pointer;
+    font-weight: bold;
+    text-align: left;
+    font-size: 13px;
+    color: #333;
+  `;
+
+  item.addEventListener('mouseenter', () => { item.style.background = '#f5f5f5'; });
+  item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
+
+  item.addEventListener('click', () => {
+    activeView = viewName;
+    viewToggleBtn.textContent = `${viewName} ▾`;
+    viewDropdown.style.display = 'none';
+    setView(viewName);
+  });
+
+  viewDropdown.appendChild(item);
+});
+
+viewToggleBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const isOpen = viewDropdown.style.display === 'block';
+  viewDropdown.style.display = isOpen ? 'none' : 'block';
+});
+
+document.addEventListener('click', () => {
+  viewDropdown.style.display = 'none';
+});
+
+/* ================= Set View ================= */
 
 function setView(viewName) {
   const dist = 1200;
-
-  // Sync ortho frustum to canvas aspect
   const aspect = canvas.clientWidth / canvas.clientHeight;
 
   if (viewName === 'Perspective') {
@@ -204,14 +265,17 @@ function setView(viewName) {
     controls.target.copy(initialTarget);
     controls.object = camera;
     controls.enableRotate = true;
+    controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+    controls.touches.ONE = THREE.TOUCH.ROTATE;
     controls.update();
 
   } else {
     activeCamera = orthoCamera;
     controls.object = orthoCamera;
-    controls.enableRotate = false; // lock rotation in elevation views
+    controls.enableRotate = false;
+    controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+    controls.touches.ONE = THREE.TOUCH.PAN;
 
-    // Compute scene center for orbit target
     if (instancedMeshes.length) {
       tmpBox.setFromObject(arrayGroup);
       tmpBox.getCenter(tmpCenter);
@@ -221,25 +285,19 @@ function setView(viewName) {
 
     controls.target.copy(tmpCenter);
 
-   if (viewName === 'Top') {
-  // Look down from +Y
-  orthoCamera.position.set(tmpCenter.x, tmpCenter.y + dist, tmpCenter.z);
-  orthoCamera.up.set(0, 0, -1);
-
-} else if (viewName === 'Front') {
-  // Look from +Z
-  orthoCamera.position.set(tmpCenter.x, tmpCenter.y, tmpCenter.z + dist);
-  orthoCamera.up.set(0, 1, 0);
-
-} else if (viewName === 'Right') {
-  // Look from +X
-  orthoCamera.position.set(tmpCenter.x + dist, tmpCenter.y, tmpCenter.z);
-  orthoCamera.up.set(0, 1, 0);
-}
+    if (viewName === 'Top') {
+      orthoCamera.position.set(tmpCenter.x, tmpCenter.y + dist, tmpCenter.z);
+      orthoCamera.up.set(0, 0, -1);
+    } else if (viewName === 'Front') {
+      orthoCamera.position.set(tmpCenter.x, tmpCenter.y, tmpCenter.z + dist);
+      orthoCamera.up.set(0, 1, 0);
+    } else if (viewName === 'Right') {
+      orthoCamera.position.set(tmpCenter.x + dist, tmpCenter.y, tmpCenter.z);
+      orthoCamera.up.set(0, 1, 0);
+    }
 
     orthoCamera.lookAt(tmpCenter);
 
-    // Scale frustum to show the scene at a reasonable size
     const halfH = dist * 0.5;
     orthoCamera.left   = -halfH * aspect;
     orthoCamera.right  =  halfH * aspect;
@@ -251,14 +309,9 @@ function setView(viewName) {
 
     controls.update();
   }
-}
 
-viewToggleBtn.addEventListener('click', () => {
-  currentViewIndex = (currentViewIndex + 1) % views.length;
-  const next = views[currentViewIndex];
-  viewToggleBtn.textContent = views[(currentViewIndex + 1) % views.length]; // show NEXT view label
-  setView(next);
-});
+  updateDimensions();
+}
 
 /* ================= Lighting ================= */
 
@@ -524,7 +577,6 @@ function loadModel(key) {
   fullClear();
   showLoading();
 
-  // Let the browser paint the overlay before starting the load
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       loader.load(def.url, gltf => {
@@ -620,7 +672,6 @@ function createArray() {
     });
   }
 
-  // Update matrices — fast path
   meshes.forEach((mesh, mi) => {
     const im = instancedMeshes[mi];
     im.count = count;
@@ -634,7 +685,6 @@ function createArray() {
     im.instanceMatrix.needsUpdate = true;
   });
 
-  // Rebuild edge lines
   clearEdges();
   meshes.forEach(mesh => {
     const edgesGeom = new THREE.EdgesGeometry(mesh.geometry, 1);
@@ -807,25 +857,50 @@ function updateDimensions() {
   const min = tmpBox.min;
   const max = tmpBox.max;
 
-  const offsetY = params.spacingX * 0.3;
-  const offsetX = params.spacingZ * 0.3;
-  const offsetZ = params.spacingX * 0.3;
+  const showX = activeView !== 'Right';
+  const showY = activeView !== 'Top';
+  const showZ = activeView !== 'Front';
 
-  drawDimension(
-    new THREE.Vector3(min.x, 0, max.z + offsetZ),
-    new THREE.Vector3(max.x, 0, max.z + offsetZ),
-    formatDimension(tmpSize.x / params.scale)
-  );
-  drawDimension(
-    new THREE.Vector3(min.x - offsetY, min.y, min.z),
-    new THREE.Vector3(min.x - offsetY, max.y, min.z),
-    formatDimension(tmpSize.y / params.scale)
-  );
-  drawDimension(
-    new THREE.Vector3(max.x + offsetX, 0, min.z),
-    new THREE.Vector3(max.x + offsetX, 0, max.z),
-    formatDimension(tmpSize.z / params.scale)
-  );
+  let offsetX = params.spacingX * 0.3;
+  let offsetY = params.spacingZ * 0.3;
+  let offsetZ = params.spacingX * 0.3;
+
+  if (activeView === 'Front') {
+    offsetX = params.spacingX * 0.3;
+    offsetZ = params.spacingX * 0.3;
+  }
+
+  if (activeView === 'Right') {
+    offsetX = params.spacingX * 0.3;
+    offsetY = params.spacingZ * 0.3;
+  }
+
+  if (showX) {
+    const yPos = activeView === 'Front' ? -params.spacingY * 0.2 : 0;
+    drawDimension(
+      new THREE.Vector3(min.x, yPos, max.z + offsetZ),
+      new THREE.Vector3(max.x, yPos, max.z + offsetZ),
+      formatDimension(tmpSize.x / params.scale)
+    );
+  }
+
+  if (showY) {
+    const zPos = activeView === 'Right' ? max.z + offsetY : min.z;
+    drawDimension(
+      new THREE.Vector3(min.x - offsetX, min.y, zPos),
+      new THREE.Vector3(min.x - offsetX, max.y, zPos),
+      formatDimension(tmpSize.y / params.scale)
+    );
+  }
+
+  if (showZ) {
+    const yPos = activeView === 'Right' ? -params.spacingY * 0.2 : 0;
+    drawDimension(
+      new THREE.Vector3(max.x + offsetY, yPos, min.z),
+      new THREE.Vector3(max.x + offsetY, yPos, max.z),
+      formatDimension(tmpSize.z / params.scale)
+    );
+  }
 }
 
 /* ================= Render ================= */
@@ -853,15 +928,15 @@ function animate() {
   dimensionGroup.children.forEach(obj => {
     if (obj.isSprite) {
       obj.scale.set(currentGap, currentGap * 0.25, 1);
-      obj.quaternion.copy(activeCamera.quaternion); // <-- updated
+      obj.quaternion.copy(activeCamera.quaternion);
     }
   });
 
   renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
   renderer.clear();
-  renderer.render(scene, activeCamera); // <-- updated
+  renderer.render(scene, activeCamera);
 
-  axisHelper.quaternion.copy(activeCamera.quaternion); // <-- updated
+  axisHelper.quaternion.copy(activeCamera.quaternion);
   renderAxisHelper();
 }
 
