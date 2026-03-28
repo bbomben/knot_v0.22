@@ -156,6 +156,7 @@ cameraResetBtn.style.cursor = 'pointer';
 cameraResetBtn.style.fontWeight = 'bold';
 cameraResetBtn.style.zIndex = '10';
 cameraResetBtn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
+cameraResetBtn.style.color = '#333';
 cameraResetBtn.classList.add('reset-btn');
 viewerWrapper.appendChild(cameraResetBtn);
 
@@ -191,7 +192,8 @@ viewToggleBtn.style.borderRadius = '6px';
 viewToggleBtn.style.cursor = 'pointer';
 viewToggleBtn.style.fontWeight = 'bold';
 viewToggleBtn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
-viewToggleBtn.style.minWidth = '130px';
+viewToggleBtn.style.color = '#333';
+viewToggleBtn.style.minWidth = '100px';
 viewToggleBtn.style.textAlign = 'left';
 viewToggleBtn.classList.add('reset-btn');
 viewBtnWrapper.appendChild(viewToggleBtn);
@@ -208,7 +210,7 @@ viewDropdown.style.cssText = `
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   overflow: hidden;
-  min-width: 130px;
+  min-width: 100px;
   z-index: 12;
 `;
 viewBtnWrapper.appendChild(viewDropdown);
