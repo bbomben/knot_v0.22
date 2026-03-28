@@ -1,13 +1,19 @@
+/* ================= Base Reset ================= */
+
 * {
   padding: 2px;
   margin: 0;
-  cursor: none;
-}
-* {
   cursor: none !important;
 }
 
-/* ── full-screen thin lines ── */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* ================= Crosshair Cursor ================= */
+
 .crosshair-h {
   position: fixed;
   left: 0;
@@ -20,6 +26,7 @@
   z-index: 9998;
   transition: background 0.2s ease;
 }
+
 .crosshair-v {
   position: fixed;
   top: 0;
@@ -38,16 +45,7 @@
   background: rgba(0, 0, 0, 0.6);
 }
 
-.header {
-  width: 100%;
-  text-align: center;
-  background-color: #f5f5f5;
-  color: #1f1f1f;
-  padding: 20px;
-  margin-left: 0px;
-  font-size: 24px;
-  font-weight: bold;
-}
+/* ================= Layout ================= */
 
 body {
   margin: 0;
@@ -62,14 +60,32 @@ body {
 }
 
 .header {
+  width: 100%;
   font-family: "Arial Black", sans-serif;
   font-size: 32px;
+  font-weight: bold;
   color: #1f1f1f;
   text-align: left;
+  background-color: #f5f5f5;
+  padding: 20px;
   margin-bottom: 20px;
 }
 
-/* GUI panel styling */
+/* ================= Reset View Button ================= */
+
+.reset-btn {
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.reset-btn:hover {
+  background: #ff0000 !important;
+  color: #ffffff;
+}
+
+/* ================= lil-gui Panel ================= */
+
 .lil-gui {
   --width: 300px;
   --font-size: 14px;
@@ -109,38 +125,30 @@ body {
   height: 25px;
 }
 
-/* iPhone 14 specific styling */
-@media (max-width: 490px) {
-  canvas {
-    width: calc(100vw - 10px) !important;
-    margin-left: 5px !important;
-    margin-right: 5px !important;
-    height: 45vh !important;
-  }
+/* ================= + / - Buttons Side by Side ================= */
+
+.lil-gui .children {
+  display: flex;
+  flex-wrap: wrap;
 }
 
-/* ================================
-   lil-gui Reset Button Styling
-   ================================ */
+.lil-gui .children > * {
+  width: 100%;
+}
 
-/* Visual separation from Count Z */
+.lil-gui .children > *:has(button) {
+  width: 50%;
+  box-sizing: border-box;
+}
+
+/* ================= Reset Button ================= */
+
 .lil-gui .gui-reset {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-.reset-btn {
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-.reset-btn:hover {
-  background: #ff0000 !important;
-  color: #ffffff;
-}
-
-/* Reset button itself */
 .lil-gui .gui-reset button {
   width: 100%;
   background: #f5f5f5;
@@ -149,39 +157,31 @@ body {
   letter-spacing: 0.03em;
   border-radius: 4px;
   height: 40px;
-
-  cursor: pointer;
 }
 
-/* Hover state */
 .lil-gui .gui-reset button:hover {
   background: #ff0000;
   border-color: #ff0000;
   color: #ffffff;
 }
 
-/* Active (click) state */
 .lil-gui .gui-reset button:active {
   background: #d6d6d6;
 }
 
-/* Optional: subtle "utility action" feel */
 .lil-gui .gui-reset .name {
   text-align: center;
 }
 
-/* ================= Count Display Framework ================= */
+/* ================= Count Display ================= */
 
-/* Entire row */
 .gui-count-display {
   background: #f6f6f6;
   border: 1px solid #ffffff;
-
   margin-bottom: 6px;
   padding: 4px 6px;
 }
 
-/* Label (Count X, Count Y, Count Z) */
 .gui-count-display .name {
   font-weight: 600;
   font-size: 12px;
@@ -189,13 +189,13 @@ body {
   letter-spacing: 0.03em;
 }
 
-/* Value container */
 .gui-count-display .controller {
+  flex: 1;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
 }
 
-/* Actual numeric value */
 .gui-count-display input {
   background: transparent;
   border: none;
@@ -204,27 +204,13 @@ body {
   font-weight: 700;
   text-align: right;
   margin-right: 6px;
-  width: 48px;
+  width: 100px;
   padding: 0;
 }
 
-/* Disabled look cleanup */
 .gui-count-display input:disabled {
   opacity: 1;
   -webkit-text-fill-color: #ffffff;
-}
-
-/* Make the controller column take full width */
-.gui-count-display .controller {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-/* Optional: fix width so numbers line up */
-.gui-count-display input {
-  width: 100px;
 }
 
 /* ================= Total Modules Display ================= */
@@ -235,70 +221,98 @@ body {
   height: 25px;
   background: #111;
   border-radius: 6px;
-
   display: flex;
   align-items: center;
 }
 
-/* Label text */
 .gui-total-display .name {
   flex: 1;
-
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
-
   color: #ffffff;
 }
 
-/* Remove any leftover controller spacing */
 .gui-total-display .controller {
   display: none;
 }
 
-/* Style the folder container */
-.dg.ac .folder {
-  background-color: #000000; /* dark blue-gray background */
-  border-radius: 8px;
-  padding: 8px;
-  margin-bottom: 6px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
+/* ================= Mobile ================= */
 
-/* Style the folder title */
-.dg.ac .folder .title {
-  color: #ecf0f1; /* light text color */
-  font-weight: bold;
-  font-size: 14px;
-  cursor: pointer;
-}
+@media (max-width: 768px) {
+  * {
+    cursor: auto !important;
+    /* First 4 rows (Module Type, Knot Colour, Dimensions, Units) stay full width */
+    .lil-gui .children > *:nth-child(-n + 4) {
+      width: 100%;
+    }
 
-/* Style the dropdowns (like your Knot Colour control) */
-.dg.ac select {
-  background-color: #34495e; /* dark dropdown background */
-  color: #ecf0f1; /* light text */
-  border: 1px solid #1abc9c; /* teal border */
-  border-radius: 4px;
-  padding: 4px 6px;
-}
+    /* Rows 5 onwards are the count controls — split into 3 columns */
+    .lil-gui .children > *:nth-child(n + 5) {
+      width: 33.33%;
+      box-sizing: border-box;
+    }
 
-/* Change dropdown on hover/focus */
-.dg.ac select:hover,
-.dg.ac select:focus {
-  border-color: #e67e22; /* orange highlight */
-  outline: none;
-}
+    /* But the Reset and Total rows should go back to full width */
+    .lil-gui .children > .gui-reset,
+    .lil-gui .children > .gui-total-display {
+      width: 100%;
+    }
+    .gui-count-display .widget {
+      display: none !important;
+    }
+    html,
+    body {
+      overflow-x: hidden;
+      position: relative;
+    }
+  }
 
-/* Style the value area if numeric or string inputs are added */
-.dg.ac .c input {
-  background-color: #34495e;
-  color: #ecf0f1;
-  border: 1px solid #1abc9c;
-  border-radius: 4px;
-  padding: 2px 4px;
-}
+  .crosshair-h,
+  .crosshair-v,
+  .cursor-cross {
+    display: none;
+  }
 
-/* Optional: style open/close arrow of folder */
-.dg.ac .folder .title:before {
-  color: #1abc9c; /* teal arrow */
+  body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding-top: 0;
+    overflow-x: hidden;
+  }
+
+  .header {
+    font-size: 24px;
+    padding: 14px 16px;
+    margin-bottom: 0;
+  }
+
+  canvas {
+    width: 100vw !important;
+    height: 45vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    display: block !important;
+  }
+
+  body > div[style] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0;
+  }
+
+  .lil-gui {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    --width: 100%;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    max-height: 45vh;
+    overflow-y: auto;
+  }
 }

@@ -340,6 +340,7 @@ displayCtrl.domElement.classList.add('gui-count-display');
       params[key] = Math.max(min, params[key] - 1);
       createArray();
       updateButtons();
+      
     }
   }, 'dec').name('−');
 
