@@ -45,6 +45,60 @@ body {
   background: rgba(0, 0, 0, 0.6);
 }
 
+/* ── small thick X on hover ── */
+.cursor-cross {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.cursor-cross::before,
+.cursor-cross::after {
+  content: "";
+  position: absolute;
+  background: #000000;
+  border-radius: 1px;
+  transition:
+    width 0.2s ease,
+    height 0.2s ease;
+}
+
+.cursor-cross::before {
+  width: 20px;
+  height: 3px;
+  top: -1.5px;
+  left: -10px;
+  transform: rotate(45deg);
+}
+
+.cursor-cross::after {
+  width: 3px;
+  height: 20px;
+  top: -10px;
+  left: -1.5px;
+  transform: rotate(45deg);
+}
+
+.cursor-cross.is-hovering {
+  opacity: 1;
+}
+
+.cursor-cross.is-hovering::before {
+  width: 24px;
+  left: -12px;
+}
+
+.cursor-cross.is-hovering::after {
+  height: 24px;
+  top: -12px;
+}
+
 /* ================= Layout ================= */
 
 body {
@@ -237,41 +291,31 @@ body {
   display: none;
 }
 
+/* ================= Drag Divider ================= */
+
+.drag-divider {
+  display: none;
+}
+
+.drag-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
 /* ================= Mobile ================= */
 
 @media (max-width: 768px) {
   * {
     cursor: auto !important;
-    /* First 4 rows (Module Type, Knot Colour, Dimensions, Units) stay full width */
-    .lil-gui .children > *:nth-child(-n + 4) {
-      width: 100%;
-    }
-
-    /* Rows 5 onwards are the count controls — split into 3 columns */
-    .lil-gui .children > *:nth-child(n + 5) {
-      width: 33.33%;
-      box-sizing: border-box;
-    }
-
-    /* But the Reset and Total rows should go back to full width */
-    .lil-gui .children > .gui-reset,
-    .lil-gui .children > .gui-total-display {
-      width: 100%;
-    }
-    .gui-count-display .widget {
-      display: none !important;
-    }
-    html,
-    body {
-      overflow-x: hidden;
-      position: relative;
-    }
   }
 
-  .crosshair-h,
-  .crosshair-v,
-  .cursor-cross {
-    display: none;
+  html,
+  body {
+    overflow-x: hidden;
+    position: relative;
   }
 
   body {
@@ -279,13 +323,18 @@ body {
     align-items: stretch;
     gap: 0;
     padding-top: 0;
-    overflow-x: hidden;
   }
 
   .header {
     font-size: 24px;
     padding: 14px 16px;
     margin-bottom: 0;
+  }
+
+  .crosshair-h,
+  .crosshair-v,
+  .cursor-cross {
+    display: none;
   }
 
   canvas {
@@ -314,5 +363,36 @@ body {
     margin: 0 !important;
     max-height: 45vh;
     overflow-y: auto;
+  }
+
+  .gui-count-display .widget {
+    display: none;
+  }
+
+  .lil-gui .children > *:nth-child(-n + 4) {
+    width: 100%;
+  }
+
+  .lil-gui .children > *:nth-child(n + 5) {
+    width: 33.33%;
+    box-sizing: border-box;
+  }
+
+  .lil-gui .children > .gui-reset,
+  .lil-gui .children > .gui-total-display {
+    width: 100%;
+  }
+
+  .drag-divider {
+    display: flex;
+    width: 100%;
+    height: 28px;
+    background: #222;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    z-index: 100;
+    flex-shrink: 0;
+    user-select: none;
   }
 }
