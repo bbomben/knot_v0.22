@@ -108,6 +108,7 @@ cameraResetBtn.style.cursor = 'pointer';
 cameraResetBtn.style.fontWeight = 'bold';
 cameraResetBtn.style.zIndex = '10';
 cameraResetBtn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
+cameraResetBtn.classList.add('reset-btn');
 
 viewerWrapper.appendChild(cameraResetBtn);
 
@@ -743,3 +744,23 @@ dimensionGroup.children.forEach(obj => {
 
 animate();
 
+const cross = document.querySelector('.cursor-cross');
+const lineH = document.querySelector('.crosshair-h');
+const lineV = document.querySelector('.crosshair-v');
+
+document.addEventListener('mousemove', e => {
+  cross.style.left = e.clientX + 'px';
+  cross.style.top  = e.clientY + 'px';
+  lineH.style.top  = e.clientY + 'px';
+  lineV.style.left = e.clientX + 'px';
+});
+
+document.querySelectorAll('a, button, [data-cursor-hover]')
+  .forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      [cross, lineH, lineV].forEach(el => el.classList.add('is-hovering'));
+    });
+    el.addEventListener('mouseleave', () => {
+      [cross, lineH, lineV].forEach(el => el.classList.remove('is-hovering'));
+    });
+  });

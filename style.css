@@ -1,6 +1,41 @@
 * {
   padding: 2px;
   margin: 0;
+  cursor: none;
+}
+* {
+  cursor: none !important;
+}
+
+/* ── full-screen thin lines ── */
+.crosshair-h {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transform: translateY(-50%) scaleY(0.5);
+  transform-origin: center center;
+  z-index: 9998;
+  transition: background 0.2s ease;
+}
+.crosshair-v {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transform: translateX(-50%) scaleX(0.5);
+  transform-origin: center center;
+  z-index: 9998;
+  transition: background 0.2s ease;
+}
+
+.crosshair-h.is-hovering,
+.crosshair-v.is-hovering {
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .header {
@@ -95,6 +130,16 @@ body {
   border-top: 1px solid rgba(0, 0, 0, 0.15);
 }
 
+.reset-btn {
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.reset-btn:hover {
+  background: #ff0000 !important;
+  color: #ffffff;
+}
+
 /* Reset button itself */
 .lil-gui .gui-reset button {
   width: 100%;
@@ -112,6 +157,7 @@ body {
 .lil-gui .gui-reset button:hover {
   background: #ff0000;
   border-color: #ff0000;
+  color: #ffffff;
 }
 
 /* Active (click) state */
