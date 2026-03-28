@@ -311,6 +311,14 @@ body {
   * {
     cursor: auto !important;
   }
+  canvas {
+    height: auto !important;
+  }
+
+  body > div[style] {
+    height: auto !important;
+    min-height: 0 !important;
+  }
 
   html,
   body {
@@ -366,7 +374,7 @@ body {
   }
 
   .gui-count-display .widget {
-    display: none;
+    display: none !important;
   }
 
   .lil-gui .children > *:nth-child(-n + 4) {

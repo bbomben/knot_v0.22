@@ -354,54 +354,37 @@ totalCtrl.domElement.classList.add('gui-total-display');
 
 /* ================= Draggable Divider (mobile only) ================= */
 
-if (window.innerWidth <= 768) {
-  const divider = document.createElement('div');
-  divider.style.cssText = `
-    width: 100%;
-    height: 28px;
-    background: #222;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: none;
-    z-index: 100;
-    flex-shrink: 0;
-    user-select: none;
-  `;
+const divider = document.createElement('div');
+divider.className = 'drag-divider';
+divider.innerHTML = `<div class="drag-handle"></div>`;
 
-  divider.innerHTML = `<div style="
-    width: 40px;
-    height: 4px;
-    background: rgba(255,255,255,0.4);
-    border-radius: 2px;
-    pointer-events: none;
-  "></div>`;
+const guiEl = document.querySelector('.lil-gui');
+document.body.insertBefore(divider, guiEl);
 
-  // Insert between viewerWrapper and the GUI
-  const guiEl = document.querySelector('.lil-gui');
-  document.body.insertBefore(divider, guiEl);
+let startY = null;
+let currentCanvasH = window.innerHeight * 0.45; // matches the 45vh default
 
-  let startY = null;
-  let startH = null;
+divider.addEventListener('touchstart', e => {
+  startY = e.touches[0].clientY;
+  divider.style.background = '#ff0000';
+}, { passive: true });
 
-  divider.addEventListener('touchstart', e => {
-    startY = e.touches[0].clientY;
-    startH = canvas.clientHeight;
-  }, { passive: true });
+divider.addEventListener('touchmove', e => {
+  if (startY === null) return;
+  const dy = e.touches[0].clientY - startY;
+  const newH = Math.min(Math.max(currentCanvasH + dy, 150), window.innerHeight - 200);
+  canvas.style.setProperty('height', newH + 'px', 'important');
+  resize();
+}, { passive: true });
 
-  divider.addEventListener('touchmove', e => {
-    if (startY === null) return;
-    const dy = e.touches[0].clientY - startY;
-    const newH = Math.min(Math.max(startH + dy, 150), window.innerHeight - 200);
-    canvas.style.height = newH + 'px';
-    resize();
-  }, { passive: true });
-
-  divider.addEventListener('touchend', () => {
-    startY = null;
-    startH = null;
-  });
-}
+divider.addEventListener('touchend', e => {
+  if (startY !== null) {
+    const dy = e.changedTouches[0].clientY - startY;
+    currentCanvasH = Math.min(Math.max(currentCanvasH + dy, 150), window.innerHeight - 200);
+  }
+  startY = null;
+  divider.style.background = '#222';
+});
 
 /* ================= Model Loader ================= */
 
