@@ -161,9 +161,9 @@ cameraResetBtn.classList.add('reset-btn');
 viewerWrapper.appendChild(cameraResetBtn);
 
 cameraResetBtn.addEventListener('click', () => {
-  camera.position.copy(initialCameraPosition);
-  controls.target.copy(initialTarget);
-  controls.update();
+  // Re-run setView for whichever view is currently active.
+  // setView handles fit-to-model for all views (perspective + ortho).
+  setView(activeView);
 });
 
 /* ================= View Dropdown ================= */
@@ -258,17 +258,34 @@ document.addEventListener('click', () => {
 /* ================= Set View ================= */
 
 function setView(viewName) {
-  const dist = 1200;
   const aspect = canvas.clientWidth / canvas.clientHeight;
+  const padding = 1.35; // zoom-out padding factor for ortho views
 
   if (viewName === 'Perspective') {
     activeCamera = camera;
-    camera.position.copy(initialCameraPosition);
-    controls.target.copy(initialTarget);
     controls.object = camera;
     controls.enableRotate = true;
     controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
     controls.touches.ONE = THREE.TOUCH.ROTATE;
+
+    if (instancedMeshes.length) {
+      tmpBox.setFromObject(arrayGroup);
+      tmpBox.getCenter(tmpCenter);
+      tmpBox.getSize(tmpSize);
+
+      const maxDim = Math.max(tmpSize.x, tmpSize.y, tmpSize.z);
+      const fov = camera.fov * (Math.PI / 180);
+      const fovEffective = Math.min(fov, fov * aspect);
+      const distance = (maxDim / 2) / Math.tan(fovEffective / 2) * 1.6;
+
+      const dir = new THREE.Vector3(1, 0.8, 1).normalize();
+      camera.position.copy(tmpCenter).addScaledVector(dir, distance);
+      controls.target.copy(tmpCenter);
+    } else {
+      camera.position.copy(initialCameraPosition);
+      controls.target.copy(initialTarget);
+    }
+
     controls.update();
 
   } else {
@@ -281,34 +298,64 @@ function setView(viewName) {
     if (instancedMeshes.length) {
       tmpBox.setFromObject(arrayGroup);
       tmpBox.getCenter(tmpCenter);
+      tmpBox.getSize(tmpSize);
     } else {
       tmpCenter.set(0, 0, 0);
+      tmpSize.set(500, 500, 500);
     }
 
     controls.target.copy(tmpCenter);
 
+    // Place camera far enough away to clear the model for near/far planes
+    const maxDim = Math.max(tmpSize.x, tmpSize.y, tmpSize.z);
+    const dist = maxDim * 3;
+
+    // Helper: given the two half-extents visible in this view (horizontal, vertical),
+    // compute a frustum that fits both axes within the canvas, with padding.
+    function fitOrthoFrustum(halfExtentH, halfExtentV) {
+      // Scale each half-extent up by padding
+      const w = halfExtentH * padding;
+      const h = halfExtentV * padding;
+      // Choose whichever constraint is tighter — the one that would overflow the canvas
+      const byHeight = h;           // top/bottom set by vertical extent
+      const byWidth  = w / aspect;  // top/bottom needed to fit horizontal extent
+      const fitH = Math.max(byHeight, byWidth);
+      orthoCamera.top    =  fitH;
+      orthoCamera.bottom = -fitH;
+      orthoCamera.left   = -fitH * aspect;
+      orthoCamera.right  =  fitH * aspect;
+    }
+
     if (viewName === 'Top') {
       orthoCamera.position.set(tmpCenter.x, tmpCenter.y + dist, tmpCenter.z);
       orthoCamera.up.set(0, 0, -1);
+      // Looking down Y — visible extents are X (horizontal) and Z (vertical)
+      fitOrthoFrustum(tmpSize.x / 2, tmpSize.z / 2);
+
     } else if (viewName === 'Front') {
       orthoCamera.position.set(tmpCenter.x, tmpCenter.y, tmpCenter.z + dist);
       orthoCamera.up.set(0, 1, 0);
+      // Looking along -Z — visible extents are X (horizontal) and Y (vertical)
+      fitOrthoFrustum(tmpSize.x / 2, tmpSize.y / 2);
+
     } else if (viewName === 'Right') {
       orthoCamera.position.set(tmpCenter.x + dist, tmpCenter.y, tmpCenter.z);
       orthoCamera.up.set(0, 1, 0);
+      // Looking along -X — visible extents are Z (horizontal) and Y (vertical)
+      fitOrthoFrustum(tmpSize.z / 2, tmpSize.y / 2);
     }
 
+    orthoCamera.near = 0.1;
+    orthoCamera.far  = dist * 2 + maxDim;
     orthoCamera.lookAt(tmpCenter);
-
-    const halfH = dist * 0.5;
-    orthoCamera.left   = -halfH * aspect;
-    orthoCamera.right  =  halfH * aspect;
-    orthoCamera.top    =  halfH;
-    orthoCamera.bottom = -halfH;
-    orthoCamera.near   = 0.1;
-    orthoCamera.far    = 10000;
     orthoCamera.updateProjectionMatrix();
 
+    // Save this fitted state so controls.reset() always returns here,
+    // clearing any zoom/pan the user applied since switching to this view.
+    controls.saveState();
+    controls.reset();
+    controls.target.copy(tmpCenter);
+    orthoCamera.lookAt(tmpCenter);
     controls.update();
   }
 
